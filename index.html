@@ -129,7 +129,7 @@
         function cargarSalas() {
     $.ajax({
             type: "POST",
-            url: "https://inventariofw.somee.com/paginas.asmx/ObtenerSalasDisponibles",
+            url: "http://inventariofw.somee.com/paginas.asmx/ObtenerSalasDisponibles",
             data: "", // Enviar vacío, como en Postman (esto es opcional, si el servidor lo requiere)
             contentType: "application/x-www-form-urlencoded", // Similar a cómo Postman lo maneja
             dataType: "xml", // Espera una respuesta XML
