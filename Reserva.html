@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reserva de Salas</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .sala { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; }
+        .sala img { width: 100%; max-width: 300px; height: auto; }
+        #modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        #modal-content {
+            background: #fff;
+            padding: 20px;
+            width: 90%;
+            max-width: 500px;
+            border-radius: 8px;
+        }
+        #modal-content button {
+            display: block;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Salas Disponibles</h1>
+    <div id="salas-container"></div>
+
+    <!-- Modal -->
+    <div id="modal">
+        <div id="modal-content">
+            <h2>Horarios Disponibles</h2>
+            <div id="horarios-container"></div>
+            <button onclick="cerrarModal()">Cerrar</button>
+        </div>
+    </div>
+
+<script>
+    // Cargar las salas
+    function cargarSalas() {
+fetch('http://inventariofw.somee.com/paginas.asmx/ObtenerSalasDisponibles', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json' // El ASMX espera este encabezado
+    },
+    body: JSON.stringify({}) // Aunque no envíes datos, agrega un body vacío
+})
+.then(response => {
+    if (!response.ok) {
+        throw new Error('Error en la solicitud: ' + response.statusText);
+    }
+    return response.json();
+})
+.then(data => {
+    console.log(data.d); // Los datos JSON del ASMX suelen estar en `d`
+})
+.catch(error => {
+    console.error('Error al cargar las salas:', error);
+});
+
+    }
+
+    // Abrir el modal y cargar horarios
+    function abrirModal(salaID) {
+        const modal = document.getElementById('modal');
+        const horariosContainer = document.getElementById('horarios-container');
+        horariosContainer.innerHTML = ''; // Limpiar contenido previo
+
+        fetch(`/api/horarios?salaID=${salaID}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Error en la solicitud: ' + response.statusText);
+            }
+            return response.json();
+        })
+        .then(horarios => {
+            horarios.forEach(horario => {
+                const div = document.createElement('div');
+                div.innerHTML = `
+                    <p>${horario.Fecha} - ${horario.HoraInicio} a ${horario.HoraFin}</p>
+                    <button onclick="reservar(${horario.HorarioID})">Reservar</button>
+                `;
+                horariosContainer.appendChild(div);
+            });
+            modal.style.display = 'flex';
+        })
+        .catch(error => {
+            console.error('Error al cargar los horarios:', error);
+        });
+    }
+
+    // Cerrar el modal
+    function cerrarModal() {
+        const modal = document.getElementById('modal');
+        modal.style.display = 'none';
+    }
+
+    // Simular la reserva
+    function reservar(horarioID) {
+        alert(`Para reservar esta sala, envíe un mensaje a WhatsApp: +51941607813`);
+    }
+
+    // Llamar al cargar las salas
+    cargarSalas();
+</script>
+</body>
+</html>
