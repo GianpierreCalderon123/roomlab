@@ -7,7 +7,6 @@
     <!-- Bootstrap CSS -->
 	<!-- FullCalendar CSS -->
 
-<!-- jQuery -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <!-- Bootstrap CSS -->
@@ -15,12 +14,11 @@
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 
-<!-- FullCalendar CSS -->
-<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/main.min.css" rel="stylesheet">
 
-<!-- FullCalendar JS -->
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
-    
+ <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.js"></script>
+
 	  <style>
         body {
             font-family: Arial, sans-serif;
@@ -252,18 +250,57 @@
     </section>
 
     <!-- Modal -->
-    <div id="modal">
-        <div id="modal-content">
-            <h2>Horarios Disponibles</h2>
- <div id="calendar"></div>
- 
-            <button onclick="cerrarModal()">Cerrar</button>
+     <div id="calendar-modal" class="modal fade" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content">
+				    
+					  <div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center">
+      <button id="prev-week" class="btn btn-primary">&lt; Semana Anterior</button>
+      <h2 id="current-week" class="text-center"></h2>
+      <button id="next-week" class="btn btn-primary">Semana Siguiente &gt;</button>
+    </div>
+	
 
+	 <br>
+    <div class="table-responsive">
+      <table class="table table-bordered calendar-table mt-3 text-center">
+        
+        <tbody id="weekly-matrix">
+          <!-- Rows added dynamically -->
+        </tbody>
+      </table>
+    </div>
+   
+  </div>
+        
         </div>
     </div>
+</div>
 
     
     <script>
+	
+	 const weekElement = document.getElementById("current-week");
+    const daysHeader = [...document.querySelectorAll("th[id^='day-']")];
+    const matrixElement = document.getElementById("weekly-matrix");
+    const prevWeekButton = document.getElementById("prev-week");
+    const nextWeekButton = document.getElementById("next-week");
+    const saveEventButton = document.getElementById("saveEvent");
+
+    let currentDate = new Date();
+    let events = [];
+    let editingEvent = null;
+	
+	const dayNames = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+	
+	document.addEventListener("DOMContentLoaded", function(event) { 
+//your modal setup
+cargarSalas();
+
+
+	
+});
         // Cargar las salas usando AJAX
         function cargarSalas() {
     $.ajax({
@@ -288,7 +325,7 @@
                             <p>${descripcion}</p>
                             <p>Precio: ${precio}</p>
                             <img src="${imagen}" alt="Imagen de la sala">
-                            <button class="ver-horarios-btn" onclick="abrirModal(${salaID})">Ver Horarios</button>
+                            <button class="ver-horarios-btn" onclick="abrirCalendario(${salaID})">Ver Horarios</button>
 							<a href="https://wa.me/51941607813?text=${encodeURIComponent('Hola, quiero reservar la sala ' + nombre + '.')} " target="_blank">
                             <button class="reservar-btn">Reservar</button>
                             </a>
@@ -303,52 +340,246 @@
         });
         }
 
-        // Abrir el modal y cargar horarios
-        function abrirModal(salaID) {
-            const modal = document.getElementById('modal');
-            modal.style.display = 'flex'
+      const addEventButton = document.getElementById("add-event");
+  const eventModal = new bootstrap.Modal(document.getElementById("eventModal"));
 
-        var calendarEl = document.getElementById('calendar');
+  // Asocia el evento de clic al botón
+  addEventButton.addEventListener("click", function () {
+    eventModal.show(); // Muestra el modal
+  });
+  
+  
 
-        // Inicializar FullCalendar
-        var calendar = new FullCalendar.Calendar(calendarEl, {
-            initialView: 'timeGridWeek', // Vista semanal por horas
-            headerToolbar: {
-                left: 'prev,next today', // Botones para navegar entre semanas
-                center: 'title', // Título del calendario
-                right: 'timeGridWeek,timeGridDay' // Opciones de vista
-            },
-            allDaySlot: false, // Ocultar "Todo el día"
-            slotMinTime: '08:00:00', // Horario inicial
-            slotMaxTime: '22:00:00', // Horario final
-            locale: 'es', // Configurar idioma a español
-			firstDay: 1,
-            events: [], // Por ahora vacío, aquí se cargarán las reservas
-        });
 
-        calendar.render();
- 
-        }
+function handlePrevWeek(sala, modal) {
+    return function () {
+        currentDate.setDate(currentDate.getDate() - 7);
+        cargarEventosSemana(sala, currentDate, modal);
+    };
+}
 
-        // Cerrar el modal
-        function cerrarModal() {
-            const modal = document.getElementById('modal');
-            modal.style.display = 'none';
-        }
+function handleNextWeek(sala, modal) {
+    return function () {
+        currentDate.setDate(currentDate.getDate() + 7);
+        cargarEventosSemana(sala, currentDate, modal);
+    };
+}
+    
 
-        // Simular la reserva
-        function reservar(horarioID) {
-            alert(`Para reservar esta sala, envíe un mensaje a WhatsApp: +51941607813`);
-        }
+    function getStartOfWeek(date) {
+      const day = date.getDay();
+      const diff = date.getDate() - day + (day === 0 ? -6 : 1); // Adjust for Monday as the start
+      return new Date(date.setDate(diff));
+    }
+	function eliminarEvento(eventoID) {
+    events = events.filter(event => event.id !== eventoID);
+    updateCalendar(); // Refresca la vista
+}
 
-        // Llamar al cargar las salas
+    function formatWeek(startOfWeek) {
+      const options = { month: 'short', day: 'numeric' };
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6);
+      return `${startOfWeek.toLocaleDateString('es-ES', options)} - ${endOfWeek.toLocaleDateString('es-ES', options)}`;
+    }
 
+    
+function renderMatrix(startOfWeek) {
+  matrixElement.innerHTML = "";
+
+  // Crear el encabezado con los nombres de los días y las fechas
+  const headerRow = document.createElement("tr");
+  <!-- const emptyCell = document.createElement("th"); -->
+  
+  <!-- headerRow.appendChild(emptyCell); // Celda vacía para la columna de las horas -->
+  // Celda para la columna de las horas
+  const hourHeaderCell = document.createElement("th");
+  hourHeaderCell.textContent = "Hora";
+  headerRow.appendChild(hourHeaderCell);
+
+  for (let day = 0; day < 7; day++) {
+    const dayDate = new Date(startOfWeek);
+    dayDate.setDate(startOfWeek.getDate() + day);
+
+    const headerCell = document.createElement("th");
+    headerCell.textContent = `${dayNames[day]} ${dayDate.getDate()}`;
+    headerRow.appendChild(headerCell);
+  }
+
+  matrixElement.appendChild(headerRow);
+
+  // Barrer las horas de la semana
+  for (let hour = 8; hour <= 22; hour++) {
+    const row = document.createElement("tr");
+
+    // Celda de hora (siempre la primera columna)
+    const hourCell = document.createElement("td");
+    hourCell.textContent = `${hour}:00`;
+    row.appendChild(hourCell);
+
+    for (let day = 0; day < 7; day++) {
+      // Verificar si ya hay una celda ocupando este espacio
+      const overlappingEvent = Array.from(matrixElement.querySelectorAll(`.event-cell`)).find(
+        cell => parseInt(cell.dataset.day) === day && parseInt(cell.dataset.startHour) <= hour && parseInt(cell.dataset.endHour) > hour
+      );
+
+      if (overlappingEvent) {
+        // Si ya hay una celda ocupando esta posición, saltar
+        continue;
+      }
+
+      // Verificar si hay un evento que empieza en esta hora
+      const event = events.find(e => e.day === day && e.startHour === hour);
+
+      if (event) {
+        // Crear celda con rowspan para el evento
+        const cell = document.createElement("td");
+        cell.classList.add("calendar-cell", "event-cell", "table-primary"); // Usar clase de Bootstrap
+        
+		cell.textContent = event.title;
+        cell.rowSpan = event.endHour - event.startHour;
 		
-		
-    document.addEventListener('DOMContentLoaded', function () {
-        cargarSalas();
+        // Guardar metadata en la celda
+        cell.dataset.day = day;
+        cell.dataset.startHour = event.startHour;
+        cell.dataset.endHour = event.endHour;
 
+
+				
+				
+        row.appendChild(cell);
+      } else {
+        // Crear celda vacía si no hay evento
+        const cell = document.createElement("td");
+        cell.classList.add("calendar-cell");
+        row.appendChild(cell);
+      }
+    }
+
+    matrixElement.appendChild(row);
+  }
+
+
+}
+
+
+    function updateCalendar() {
+      const startOfWeek = getStartOfWeek(new Date(currentDate));
+      weekElement.textContent = formatWeek(startOfWeek);
+      renderMatrix(startOfWeek);
+    }
+
+function cargarEventosSemana(sala, currentDate, modal) {
+    const startOfWeek = getStartOfWeek(currentDate);
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6); // Calcular el fin de la semana
+
+    const weekElement = document.getElementById("current-week");
+    const matrixElement = document.getElementById("weekly-matrix");
+
+    // Limpiar eventos y matriz antes de cargar nuevos datos
+    matrixElement.innerHTML = "";
+    events = []; // Reiniciar eventos
+
+    $.ajax({
+        url: "https://inventariofw.somee.com/Paginas.asmx/ObtenerHorariosPorSalaFiltroFecha",
+        method: "POST",
+        timeout: 0,
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        data: {
+            salaID: sala,
+            fechadesde: startOfWeek.toISOString().split('T')[0], // Formatear como YYYY-MM-DD
+            fechahasta: endOfWeek.toISOString().split('T')[0]
+        },
+        dataType: "text",
+        success: function(response) {
+            console.log("Respuesta recibida:", response);
+
+            // Manejo de respuestas vacías o inválidas
+            if (!response || response.trim().length === 0 || !response.includes("<Horario")) {
+                console.warn("No hay eventos programados para esta semana.");
+                weekElement.textContent = formatWeek(startOfWeek);
+                renderMatrix(startOfWeek);
+                modal.show();
+                return;
+            }
+
+            // Procesar respuesta XML
+            const inicioXML = response.indexOf("<ArrayOfHorario");
+            const finXML = response.lastIndexOf("</ArrayOfHorario>") + "</ArrayOfHorario>".length;
+
+            if (inicioXML === -1 || finXML === -1) {
+                console.error("El XML no se encuentra en la respuesta.");
+                alert("Error al procesar los datos del calendario.");
+                weekElement.textContent = formatWeek(startOfWeek);
+                renderMatrix(startOfWeek);
+                modal.show();
+                return;
+            }
+
+            const xmlString = response.substring(inicioXML, finXML);
+            const xml = $.parseXML(xmlString);
+            const $xml = $(xml);
+
+            // Procesar los nodos del XML
+            $xml.find("Horario").each(function() {
+                const horario = $(this);
+ const horarioID = horario.find("HorarioID").text();              
+			  const fecha = horario.find("Fecha").text();
+                const horaInicio = parseInt(horario.find("HoraInicio").text()) || 8;
+                const horaFin = parseInt(horario.find("HoraFin").text()) || 22;
+                const asunto = horario.find("Asunto").text();
+
+                // Convertir datos en formato compatible
+                const day = new Date(fecha).getDay() - 1; // Lunes = 0
+                const startHour = horaInicio;
+                const endHour = horaFin;
+
+                // Crear y agregar evento a la lista
+                events.push({  id: horarioID, title: asunto, day, startHour, endHour });
+            });
+
+            // Actualizar la matriz del calendario
+            weekElement.textContent = formatWeek(startOfWeek);
+            renderMatrix(startOfWeek);
+
+            // Mostrar el modal
+            modal.show();
+        },
+        error: function(xhr, status, error) {
+            console.error("Error al obtener los horarios:", error);
+            alert("Ocurrió un error al cargar los eventos.");
+            weekElement.textContent = formatWeek(startOfWeek);
+            renderMatrix(startOfWeek);
+            modal.show();
+        }
     });
+}
+
+
+function abrirCalendario(sala) {
+      const modal = new bootstrap.Modal(document.getElementById('calendar-modal'));
+    const prevWeekButton = document.getElementById("prev-week");
+    const nextWeekButton = document.getElementById("next-week");
+
+    // Eliminar cualquier evento existente de los botones
+    prevWeekButton.replaceWith(prevWeekButton.cloneNode(true));
+    nextWeekButton.replaceWith(nextWeekButton.cloneNode(true));
+
+    // Reasignar botones actualizados
+    const newPrevWeekButton = document.getElementById("prev-week");
+    const newNextWeekButton = document.getElementById("next-week");
+
+    // Asignar manejadores de eventos
+    newPrevWeekButton.addEventListener("click", handlePrevWeek(sala, modal));
+    newNextWeekButton.addEventListener("click", handleNextWeek(sala, modal));
+
+    // Cargar la semana actual
+    cargarEventosSemana(sala, currentDate, modal);
+	saveEventButton.dataset.salaId = sala.salaID;
+}
 
 		
     </script>
