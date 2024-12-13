@@ -374,6 +374,8 @@
 </head>
 <body>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 
     <!-- Hero Section -->
     <section class="hero-section">
@@ -440,7 +442,42 @@
             </div>
         </div>
     </div>
-    
+	
+	<!-- Modal para mostrar el mapa -->
+<div id="map-modal" class="modal fade" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Ubicación de la Sala</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="map" style="width: 100%; height: 400px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+    <script>
+function abrirMapa(latitud, longitud) {
+    const modal = new bootstrap.Modal(document.getElementById('map-modal'));
+    modal.show();
+
+    // Inicializar el mapa con Leaflet.js
+    const mapContainer = document.getElementById('map');
+    mapContainer.innerHTML = ""; // Limpiar el mapa anterior
+
+    const map = L.map('map').setView([latitud, longitud], 15);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+        attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    L.marker([latitud, longitud]).addTo(map)
+        .bindPopup('Ubicación de la sala')
+        .openPopup();
+}
+</script>
     <script>
 	
 	 const weekElement = document.getElementById("current-week");
@@ -483,7 +520,10 @@ cargarSalas();
 
                         var salaDiv = `
                             <div class="sala">
-                                <h3>${nombre}</h3><button class="ver-video-btn" onclick="abrirVideo('${videoURL}')"> <i class="fas fa-video"></i> Ver mas</button>
+                                <h3>${nombre}</h3>
+								<button class="ver-video-btn" onclick="abrirVideo('${videoURL}')"> <i class="fas fa-video"></i> Ver mas</button><br>
+								<button class="ver-video-btn" onclick="abrirMapa('-12.0704839', '-77.0520163')"> <i class="fas fa-map-marker-alt"></i>Ubicación</button>
+								
                                 <p>${descripcion}</p>
                                 <p><strong>Precio:S/. ${precio}</strong></p>
                                 <img src="${imagen}" alt="Imagen de la sala">
